@@ -2,7 +2,7 @@ package models;
 
 public class RedditData {
 
-  public String name, id, parent_id, link_id, author, body, subreddit_id, subreddit, score, created_utc;
+  public String name, id, parent_id, link_id, author, body, subreddit_id, subreddit, score, created_utc; // cba with setters
   // public String score_hidden, gilded, author_flair_text, author_flair_css_class, name, downs, ups, distinguished, controversiality, archived, edited, retrieved_on;
 
   @Override

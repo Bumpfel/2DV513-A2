@@ -1,7 +1,7 @@
 package models;
 
-public class Comment extends Data {
-
+public class Comment extends AbstractData {
+  
   private String parent_id, link_id, body, score, created_utc;
   
   public Comment() {}

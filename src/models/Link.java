@@ -1,6 +1,6 @@
 package models;
 
-public class Link extends Data {
+public class Link extends AbstractData {
   private String score, subreddit_id;  
 
   public Link() {}

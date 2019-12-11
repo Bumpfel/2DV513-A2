@@ -1,6 +1,6 @@
 package models;
 
-public class Subreddit extends Data {
+public class Subreddit extends AbstractData {
   private String subreddit;
 
   public Subreddit() {}

@@ -1,6 +1,6 @@
 package models;
 
-public abstract class Data {
+public abstract class AbstractData {
 
   protected String id;
 
@@ -12,7 +12,7 @@ public abstract class Data {
   @Override
   public boolean equals(Object o) {
     try {
-      Data other = (Data) o;
+      AbstractData other = (AbstractData) o;
       return id.equals(other.id);
     } catch (ClassCastException e) {
       return false;
