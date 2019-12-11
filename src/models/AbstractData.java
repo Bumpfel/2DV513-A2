@@ -4,6 +4,8 @@ public abstract class AbstractData {
 
   protected String id;
 
+  public String getId() { return id; }
+
   @Override
   public int hashCode() {
     return id.hashCode();

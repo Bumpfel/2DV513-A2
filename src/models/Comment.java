@@ -6,15 +6,13 @@ public class Comment extends AbstractData {
   
   public Comment() {}
 
-  public Comment set(RedditData data) {
+  public Comment(RedditData data) {
     id = data.id;
     parent_id = data.parent_id;
     link_id = data.link_id;
     body = data.body;
     score = data.score;
     created_utc = data.created_utc;
-
-    return this;
   }
 
 }

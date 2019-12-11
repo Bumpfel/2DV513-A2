@@ -13,12 +13,24 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonReader {
+  public boolean debug = false;
   private Set<Comment> comments = new HashSet<>();
   private Set<Link> links = new HashSet<>();
   private Set<Subreddit> subreddits = new HashSet<>();
 
+  public Set<Comment> getComments() {
+    return new HashSet<>(comments);
+  }
+  public Set<Link> getLinks() {
+    return new HashSet<>(links);
+  }
+  public Set<Subreddit> getSubreddits() {
+    return subreddits;
+    // return new HashSet<>(subreddits);
+  }
+
   public static void main(String[] args) {
-    new JsonReader(new File("data/big/RC_2007-10")); // 85 MB
+    JsonReader reader = new JsonReader(new File("data/big/RC_2007-10")); // 85 MB
     // mapJson(new File("data/big/RC_2011-07")); // 5.62 GB
   }
 
@@ -27,10 +39,6 @@ public class JsonReader {
   }
 
   void mapJson(File file) {
-    // Making three types of objects and modifying them instead of creating new objects all the time (for performance reasons)
-    Comment comment = new Comment();
-    Link link = new Link();
-    Subreddit subreddit = new Subreddit();
     RedditData dataPiece;
 
     try(Scanner scanner = new Scanner(file)) {
@@ -46,13 +54,16 @@ public class JsonReader {
         String str = scanner.next();
         dataPiece = mapper.readValue(str, RedditData.class); // parse line to RedditData object
         
-        comments.add(comment.set(dataPiece));
-        links.add(link.set(dataPiece));
-        subreddits.add(subreddit.set(dataPiece));
+        comments.add(new Comment(dataPiece));
+        links.add(new Link(dataPiece));
+        subreddits.add(new Subreddit(dataPiece));
       }
       double timeTaken = (double) (System.currentTimeMillis() - timestamp) / 1000;
-      System.out.println("done in " + timeTaken + " s");
-      System.out.println("comments: " + comments.size() + ", links: " + links.size() + ", subreddits: " + subreddits.size());
+      
+      if(debug) {
+        System.out.println("done in " + timeTaken + " s");
+        System.out.println("comments: " + comments.size() + ", links: " + links.size() + ", subreddits: " + subreddits.size());
+      }
 
     } catch(IOException e) {
       System.err.println(e.getMessage());

@@ -3,13 +3,14 @@ package models;
 public class Link extends AbstractData {
   private String score, subreddit_id;  
 
+  public String getScore() { return score; }
+  public String getSubredditId() { return subreddit_id; }
+
   public Link() {}
 
-  public Link set(RedditData data) {
-    id = data.link_id;
+  public Link(RedditData data) {
+    id = data.link_id.split("_")[1];
     score = data.score; // TODO osäker på om denna kan tillhöra en länk
-    subreddit_id = data.subreddit_id;
-
-    return this;
+    subreddit_id = data.subreddit_id.split("_")[1];
   }
 }
