@@ -14,7 +14,7 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class JsonReader {
+public class JsonParser {
   public boolean debug = false;
   private Set<Comment> comments = new HashSet<>();
   private Set<Link> links = new HashSet<>();
@@ -30,7 +30,8 @@ public class JsonReader {
     return new HashSet<>(subreddits);
   }
 
-  public JsonReader(File file) {
+  public JsonParser(File file, boolean debugPrints) {
+    debug = debugPrints;
     mapJson(file);
   }
 
@@ -38,7 +39,7 @@ public class JsonReader {
     RedditData dataPiece;
 
     try(Scanner scanner = new Scanner(file)) {
-      scanner.useDelimiter("\n"); // set delimiter to line
+      scanner.useDelimiter("\n"); // set delimiter to line break
 
       ObjectMapper mapper = new ObjectMapper();
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -46,11 +47,11 @@ public class JsonReader {
       long timestamp = System.currentTimeMillis();
 
       // loop through each line
-      while(scanner.hasNext()) {
+      while(scanner.hasNext() && timestamp + 5000 > System.currentTimeMillis()) {
         String str = scanner.next();
         dataPiece = mapper.readValue(str, RedditData.class); // parse line to RedditData object
         
-        // insert into sets
+        // create objects from redditdata and insert into sets
         comments.add(new Comment(dataPiece));
         links.add(new Link(dataPiece));
         subreddits.add(new Subreddit(dataPiece));
@@ -58,8 +59,11 @@ public class JsonReader {
       double timeTaken = (double) (System.currentTimeMillis() - timestamp) / 1000;
       
       if(debug) {
-        System.out.println("done in " + timeTaken + " s");
+        String fileSize = Math.round(file.length() / Math.pow(1024, 2)) + " MB";
+        System.out.println("====  JsonParser  ====");
+        System.out.println("data parsed from '" + file.getName() + "' (" + fileSize + ") in " + timeTaken + " s");
         System.out.println("comments: " + comments.size() + ", links: " + links.size() + ", subreddits: " + subreddits.size());
+        System.out.println("======================");
       }
 
     } catch(IOException e) {

@@ -8,6 +8,14 @@ public class Link extends AbstractData {
 
   public Link() {}
 
+  public String getInsertCols() {
+    return "id, subreddit_id, score";
+  }
+
+  public String[] getInsertValues() {
+    return new String[] { id, subreddit_id, score };
+  }
+
   public Link(RedditData data) {
     id = truncateId(data.link_id);
     score = data.score; // TODO osäker på om denna kan tillhöra en länk

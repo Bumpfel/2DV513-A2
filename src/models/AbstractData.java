@@ -24,4 +24,12 @@ public abstract class AbstractData {
   protected String truncateId(String str) {
     return str.split("_")[1];
   }
+
+  public String getInsertCols() {
+    return "id";
+  }
+
+  public String[] getInsertValues() {
+    return new String[] { id };
+  }
 }
