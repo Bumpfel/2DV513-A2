@@ -1,3 +1,5 @@
+package handlers;
+
 import models.Comment;
 import models.Link;
 import models.RedditData;
@@ -25,13 +27,7 @@ public class JsonReader {
     return new HashSet<>(links);
   }
   public Set<Subreddit> getSubreddits() {
-    return subreddits;
-    // return new HashSet<>(subreddits);
-  }
-
-  public static void main(String[] args) {
-    JsonReader reader = new JsonReader(new File("data/big/RC_2007-10")); // 85 MB
-    // mapJson(new File("data/big/RC_2011-07")); // 5.62 GB
+    return new HashSet<>(subreddits);
   }
 
   public JsonReader(File file) {
@@ -54,6 +50,7 @@ public class JsonReader {
         String str = scanner.next();
         dataPiece = mapper.readValue(str, RedditData.class); // parse line to RedditData object
         
+        // insert into sets
         comments.add(new Comment(dataPiece));
         links.add(new Link(dataPiece));
         subreddits.add(new Subreddit(dataPiece));

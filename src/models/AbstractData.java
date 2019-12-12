@@ -20,4 +20,8 @@ public abstract class AbstractData {
       return false;
     }
   }
+
+  protected String truncateId(String str) {
+    return str.split("_")[1];
+  }
 }

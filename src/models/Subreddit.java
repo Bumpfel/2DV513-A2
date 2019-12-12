@@ -9,6 +9,6 @@ public class Subreddit extends AbstractData {
 
   public Subreddit(RedditData data) {
     subreddit = data.subreddit;
-    id = data.subreddit_id.split("_")[1];
+    id = truncateId(data.subreddit_id);
   }
 }
