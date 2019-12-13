@@ -1,7 +1,6 @@
 package handlers;
 
 import java.sql.*;
-import java.util.Collection;
 
 import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException;
 
@@ -9,6 +8,16 @@ import models.AbstractData;
 
 public class DBHandler {
   private Connection conn;
+  private boolean debug;
+  private int successfulInsertions;
+  private long totalTimeTaken;
+
+  public int getSuccessfulInsertions() { return successfulInsertions; }
+  public long getTotalTimeTaken() { return totalTimeTaken; }
+
+  public DBHandler(boolean debugPrints) {
+    debug = debugPrints;
+  }
 
   /**
    * Using rewriteBatchedStatements=true for performance
@@ -35,7 +44,7 @@ public class DBHandler {
     return rs;
   }
 
-  public boolean exec(String query) { // TODO old. remove?
+  public boolean exec(String query) {
     try {
       Statement stmt = conn.createStatement();
       stmt.execute(query);
@@ -45,6 +54,69 @@ public class DBHandler {
       return false;
     }
   }
+  
+  /**
+   * 
+   * @param table Which table to insert data to
+   * @param data An iterable of subreddit, links, or comments
+   * @param debugPrints if true, prints debug data to console
+   */
+  public void batchInsertion(String table, Iterable<? extends AbstractData> data) {
+    if(!data.iterator().hasNext()) {
+      return;
+    }
+    
+    if(debug) System.out.println("====  Batch Insertions into " + table + " ====");
+
+    // int successfulInsertions = 0;
+    try {
+      // builds a comma-separated string "?, ?, ?, ..." with a parameter(?) for each column
+      // https://stackoverflow.com/questions/1812891/java-escape-string-to-prevent-sql-injection
+      
+      String colsString = data.iterator().next().getInsertCols();
+      
+      StringBuilder parameterBuilder = new StringBuilder();
+      for(int i = 0; i < colsString.split(",").length; i++) {
+        parameterBuilder.append("?, ");
+      }
+      String parameterString = parameterBuilder.substring(0, parameterBuilder.length() - 2);
+      
+      PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + table + "(" + colsString + ") VALUES (" + parameterString + ")");
+      long timestamp = System.currentTimeMillis();
+      
+      // TODO clean up. probably ending up not controlling batch size from here.
+      // prepare batches. execute when reaching MAX_BATCH_SIZE
+      // final int MAX_BATCH_SIZE = 10000;
+      // int batchSize = 0;
+
+      for(AbstractData dataObject : data) {
+        String[] insertValues = dataObject.getInsertValues();
+        for(int i = 1; i <= insertValues.length; i++) {
+          // replaces each parameter(?) with data values
+          stmt.setString(i, insertValues[i - 1]);
+        }
+        stmt.addBatch();
+        // batchSize++;
+        // if(batchSize % MAX_BATCH_SIZE == 0) {
+        //   // execute batch insertions
+        //   successfulInsertions += stmt.executeBatch().length;
+        // }
+      }
+      // execute the remaining batch
+      successfulInsertions += stmt.executeBatch().length;
+
+      // done
+      totalTimeTaken += System.currentTimeMillis() - timestamp;
+    } catch(MySQLIntegrityConstraintViolationException | BatchUpdateException e) {
+      // duplicate entry
+      System.err.println("Error inserting into " + table + ". " + e.getMessage());
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+
+
+  // TODO unused
   
   /**
    * Inserts data using prepared statement to escape special characters and protect against accidental or intended sql injections
@@ -94,65 +166,11 @@ public class DBHandler {
     return false;
   }
 
-  /**
-   * 
-   * @param table Which table to insert data to
-   * @param data An iterable of subreddit, links, or comments
-   * @param debugPrints if true, prints debug data to console
-   */
-  public void batchInsertion(String table, Collection<? extends AbstractData> data, boolean debugPrints) {
-    if(debugPrints) System.out.println("====  Batch Insertions into " + table + " ====");
-    try {
-      // builds a comma-separated string "?, ?, ?, ..." with a parameter(?) for each column
-      // https://stackoverflow.com/questions/1812891/java-escape-string-to-prevent-sql-injection
-      
-      String colsString = data.iterator().next().getInsertCols();
-      
-      StringBuilder parameterBuilder = new StringBuilder();
-      for(int i = 0; i < colsString.split(",").length; i++) {
-        parameterBuilder.append("?, ");
-      }
-      String parameterString = parameterBuilder.substring(0, parameterBuilder.length() - 2);
-      
-      PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + table + "(" + colsString + ") VALUES (" + parameterString + ")");
-      
-      long timestamp = System.currentTimeMillis();
-      
-      for(AbstractData dataObject : data) {
-        String[] insertValues = dataObject.getInsertValues();
-        for(int i = 1; i <= insertValues.length; i++) {
-          // replaces each parameter(?) with data values
-          stmt.setString(i, insertValues[i - 1]);
-        }
-        stmt.addBatch();
-      }
-      double seconds = (double) (System.currentTimeMillis() - timestamp) / 1000;
-      if(debugPrints) System.out.println("Statement prepared in " + seconds + " s");
-      
-      // execute batch insertions
-      int successfulInsertions = 0;
-      int[] affectedRows = stmt.executeBatch();
-      for(int i : affectedRows) {
-          successfulInsertions += i;
-      }
-      if(debugPrints) {
-        seconds = (double) (System.currentTimeMillis() - timestamp) / 1000;
-        System.out.println(successfulInsertions + " successful batch insertions of " + data.size() + " in total done in " + seconds + " s");
-        System.out.println("============================");
-      }
-    } catch(MySQLIntegrityConstraintViolationException | BatchUpdateException e) {
-      System.err.println(e.getMessage());
-      // duplicate entry
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-  }
 
-
-  // TODO unused. initial testing
+  // TODO initial testing
 
   void runShowcaseCode() {
-    DBHandler db = new DBHandler();
+    DBHandler db = new DBHandler(true);
     db.connect("my_company");
     ResultSet res = db.execQuery("SELECT * FROM employees");
     db.printResults(res, "id", "firstname", "lastname");
