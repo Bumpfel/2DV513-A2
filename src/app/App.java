@@ -4,52 +4,50 @@ import java.io.File;
 
 import handlers.DBHandler;
 import handlers.JsonParser;
-import models.Link;
-import models.Subreddit;
+import handlers.TimeFormatter;
 
 class App {
+  private static boolean BATCH_PRINTS = true;
+  private static final int BATCH_SIZE = 50000;
 
   public static void main(String[] args) {
     // parse json data and establish a db connection
-    JsonParser parser = new JsonParser(new File("data/big/RC_2007-10"), true); // 85 MB
-    // JsonParser parser = new JsonParser(new File("data/big/RC_2011-07"), true); // 5.62 GB
-    DBHandler db = new DBHandler();
-    db.connect("reddit_test");
+    DBHandler dbHandler = new DBHandler();
+    dbHandler.connect("reddit_test");
+    dbHandler.exec("TRUNCATE reddit_test.subreddits");
+    dbHandler.exec("TRUNCATE reddit_test.links");
+    dbHandler.exec("TRUNCATE reddit_test.comments");
+    if(App.BATCH_PRINTS)
+      System.out.println("Database cleared");
+    
+    // the higher the batch size, the fewer duplicates. should use as high as memory restrictions allows for max speed
+    File file = new File("data/big/RC_2007-10"); // 85 MB
+    // File file = new File("data/big/RC_2011-07"); // 5.62 GB
+    JsonParser parser = new JsonParser(file, App.BATCH_SIZE, App.BATCH_PRINTS);
 
-    db.exec("DELETE FROM subreddits");
-    db.exec("DELETE FROM links");
-    db.exec("DELETE FROM comments");
-    
-    
-    // insert subreddit
-    db.batchInsertion("subreddits", parser.getSubreddits(), true);
-    
-    // insert links
-    db.batchInsertion("links", parser.getLinks(), true);
+    long totalTimeTaken = 0, timestamp;
+    while(parser.hasNextBatch()) {
+      timestamp = System.currentTimeMillis();
+      parser.mapNextBatch();
+      dbHandler.batchInsertion("subreddits", parser.getSubreddits());
+      dbHandler.batchInsertion("links", parser.getLinks());
+      dbHandler.batchInsertion("comments", parser.getComments());
 
-    // insert comments (batch)
-    db.batchInsertion("comments", parser.getComments(), true);
+      if(App.BATCH_PRINTS)  {
+        // time estimation and prints
+        long timeTaken = System.currentTimeMillis() - timestamp;
+        totalTimeTaken += timeTaken;
+        System.out.println("inserted into db. Took " + TimeFormatter.format(timeTaken));
+        long speed = parser.getBytesScanned() / totalTimeTaken; // B/ms
+        long estTimeRemaining = (file.length() - parser.getBytesScanned()) / speed;
+        System.out.println(" - estimated time remaining: " + TimeFormatter.format(estTimeRemaining));
+      }
+    }
+    
+    System.out.println(parser.getParserStatus());
+    System.out.println(dbHandler.getDBHandlerStatus());
+    System.out.println("------------------------");
+    System.out.println("Total time: " + (TimeFormatter.format(parser.getTotalTimeTaken() + dbHandler.getTotalTimeTaken())));
   }
 
-
-
-
-
-  void old() {
-    JsonParser parser = new JsonParser(new File("data/big/RC_2007-10"), true); // 85 MB
-
-    // insert subreddits
-    int successfulInsertions = 0;
-    for(Subreddit subreddit : parser.getSubreddits()) {
-      // successfulInsertions += db.exec("INSERT INTO subreddits SET id = '" + subreddit.getId() + "', name = '" + subreddit.getName() + "'") ? 1 : 0;
-    }
-    System.out.println(successfulInsertions + " successful subreddit insertions of " + parser.getSubreddits().size() + " total");
-    
-    // insert links
-    successfulInsertions = 0;
-    for(Link link : parser.getLinks()) {
-      // successfulInsertions += db.exec("INSERT INTO links SET id = '" + link.getId() + "', subreddit_id = '" + link.getSubredditId() + "', score = '" + link.getScore() + "'") ? 1 : 0;
-    }
-
-  }
 }
