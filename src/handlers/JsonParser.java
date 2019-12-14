@@ -18,42 +18,45 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JsonParser {
   private Scanner scanner;
   private File file;
-
-  private Set<Subreddit> allSubreddits = new HashSet<>();
-  private Set<Link> allLinks = new HashSet<>();
-  private Set<Comment> allComments = new HashSet<>();
-
+  
   private Set<Subreddit> subreddits = new HashSet<>();
   private Set<Link> links = new HashSet<>();
   private Set<Comment> comments = new HashSet<>();
 
   // stats for prints
   private int batches;
-  private int parsedSubreddits;
-  private int parsedLinks;
-  private int parsedComments;
+  private int records;
   private int batchSize;
   private long totalTimeTaken;
-  private boolean debug;
+  private boolean batchPrints;
   private long bytesScanned;
 
+  public long getTotalTimeTaken() { return totalTimeTaken; }
+  
   public long getBytesScanned() { return bytesScanned; }
 
   public Set<Subreddit> getSubreddits() { return new HashSet<>(subreddits); }
   public Set<Link> getLinks() { return new HashSet<>(links); }
   public Set<Comment> getComments() { return new HashSet<>(comments); }
 
-
-  public JsonParser(File _file, int _batchSize, boolean debugPrints) {
+  public JsonParser(File _file, int _batchSize, boolean _batchPrints) {
     file = _file;
     batchSize = _batchSize;
-    debug = debugPrints;
+    batchPrints = _batchPrints;
     try {
       scanner = new Scanner(file);
-      scanner.useDelimiter("\n"); // set delimiter to line break
+      scanner.useDelimiter("\n");
     } catch(FileNotFoundException e) {
       e.printStackTrace();
     }
+  }
+
+  public String getParserStatus() {
+    // String displayTime = ((double) totalTimeTaken / 1000) + " s";
+    String fileSize = Math.round(file.length() / Math.pow(1024, 2)) + " MB";
+    return "\n==========  JsonParser  ==========\n" +
+    "data parsed from '" + file.getName() + "' (" + fileSize + ") in " + TimeFormatter.format(totalTimeTaken) + "\n" +
+    "records: " + records;
   }
 
   public void mapNextBatch() {
@@ -76,47 +79,24 @@ public class JsonParser {
         bytesScanned += str.length();
         dataPiece = mapper.readValue(str, RedditData.class); // parse line to RedditData object
 
-        Subreddit subreddit = new Subreddit(dataPiece);
-        Link link = new Link(dataPiece);
-        Comment comment = new Comment(dataPiece);
-
         // create objects from redditdata and insert into sets
-        if(!allSubreddits.contains(subreddit))
-          subreddits.add(subreddit);
-        if(!allLinks.contains(link))
-          links.add(link);
-        if(!allComments.contains(comment))
-          comments.add(comment);
+        subreddits.add(new Subreddit(dataPiece));
+        links.add(new Link(dataPiece));
+        comments.add(new Comment(dataPiece));
 
-        allSubreddits.add(subreddit);
-        allLinks.add(link);
-        allComments.add(comment);
       } catch(IOException e) {
         System.err.println(e.getMessage());
       }
     }
     
     totalTimeTaken += System.currentTimeMillis() - timestamp;
-    parsedSubreddits += subreddits.size();
-    parsedLinks += links.size();
-    parsedComments += comments.size();
+    records += comments.size(); // assuming all comments are unique. counting subreddits and links in batch parsing would yield incorrect results as they contain duplicates
 
-    if(debug) {
+    if(batchPrints) {
       System.out.println("------------");
       System.out.print("Batch #" + (++batches) + ". Batch size: " + (subreddits.size() + links.size() + comments.size()));
       System.out.println(" - " + comments.size() + " comments, " + links.size() + " links, " + subreddits.size() + " subreddits");
       System.out.print("Scanned " + Math.round(bytesScanned / Math.pow(1024, 2)) + " MB / " + Math.round(file.length() / Math.pow(1024, 2)) + " MB... ");
-    }
-
-    if(!scanner.hasNext()) {
-      String displayTime = ((double) totalTimeTaken / 1000) + " s";
-      String fileSize = Math.round(file.length() / Math.pow(1024, 2)) + " MB";
-      System.out.println();
-      System.out.println("====  JsonParser  ====");
-      System.out.println("data parsed from '" + file.getName() + "' (" + fileSize + ") in " + displayTime);
-      System.out.println("comments: " + parsedComments + ", links: " + parsedLinks + ", subreddits: " + parsedSubreddits);
-      System.out.println("======================");
-      System.out.println();
     }
   }
 
@@ -125,8 +105,7 @@ public class JsonParser {
   }
 
 
-
-  // TODO unused
+  // TODO unused. maps the entire json file in one go
   public void mapJson(File file) {
     RedditData dataPiece;
 
@@ -150,13 +129,12 @@ public class JsonParser {
       }
       double timeTaken = (double) (System.currentTimeMillis() - timestamp) / 1000;
       
-      if(debug) {
-        String fileSize = Math.round(file.length() / Math.pow(1024, 2)) + " MB";
-        System.out.println("====  JsonParser  ====");
-        System.out.println("data parsed from '" + file.getName() + "' (" + fileSize + ") in " + timeTaken + " s");
-        System.out.println("comments: " + comments.size() + ", links: " + links.size() + ", subreddits: " + subreddits.size());
-        System.out.println("======================");
-      }
+      // prints
+      String fileSize = Math.round(file.length() / Math.pow(1024, 2)) + " MB";
+      System.out.println("====  JsonParser  ====");
+      System.out.println("data parsed from '" + file.getName() + "' (" + fileSize + ") in " + timeTaken + " s");
+      System.out.println("comments: " + comments.size() + ", links: " + links.size() + ", subreddits: " + subreddits.size());
+      System.out.println("======================");
 
     } catch(IOException e) {
       System.err.println(e.getMessage());
