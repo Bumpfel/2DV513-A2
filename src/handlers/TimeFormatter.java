@@ -1,7 +1,21 @@
 package handlers;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class TimeFormatter {
   
+  public String epochToReadable(long epochDateTime) {
+    SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy-MM-dd"); // HH:mm:ss");
+
+    try {
+      return simpleDate.format(new Date(epochDateTime * 1000L));
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
   /**
    * Returns time in h:mm:ss / mm:ss, or s
    * @param milliseconds

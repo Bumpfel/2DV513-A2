@@ -72,7 +72,6 @@ public class JsonParser {
     long timestamp = System.currentTimeMillis();
 
     // parse the lines in the file with a max batch size
-    // for(int i = 0; i < batchSize && scanner.hasNext(); i++) {
     while(subreddits.size() + links.size() + comments.size() < batchSize && scanner.hasNext()) {
       try {
         String str = scanner.next();
