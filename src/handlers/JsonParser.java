@@ -52,7 +52,6 @@ public class JsonParser {
   }
 
   public String getParserStatus() {
-    // String displayTime = ((double) totalTimeTaken / 1000) + " s";
     String fileSize = Math.round(file.length() / Math.pow(1024, 2)) + " MB";
     return "\n==========  JsonParser  ==========\n" +
     "data parsed from '" + file.getName() + "' (" + fileSize + ") in " + TimeFormatter.format(totalTimeTaken) + "\n" +
@@ -62,8 +61,8 @@ public class JsonParser {
   public void mapNextBatch() {
     RedditData dataPiece = null;
 
-    subreddits.clear();
-    links.clear();
+    // subreddits.clear();
+    // links.clear();
     comments.clear();
 
     ObjectMapper mapper = new ObjectMapper();

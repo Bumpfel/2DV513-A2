@@ -8,16 +8,14 @@ import models.AbstractData;
 
 public class DBHandler {
   private Connection conn;
-  private int insertions;
+  private int attemptedInsertions;
   private long totalTimeTaken;
 
   public long getTotalTimeTaken() { return totalTimeTaken; }
 
   public String getDBHandlerStatus() {
-    // double totalTimeInSeconds = ((double) totalTimeTaken / 1000);
-    // String displayTimeTotal = "" + (totalTimeInSeconds > 60 ? totalTimeInSeconds / 60 + totalTimeInSeconds % 60 : totalTimeInSeconds + "s");
     return "==========  DBHandler  ==========\n" +
-    insertions + " insertions done (including duplicates) in " + TimeFormatter.format(totalTimeTaken);
+    attemptedInsertions + " attempted insertions (including duplicates) in " + TimeFormatter.format(totalTimeTaken);
   }
 
   /**
@@ -27,7 +25,7 @@ public class DBHandler {
   public void connect(String database) {
     try {
       Class.forName("com.mysql.jdbc.Driver");
-      conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/" + database + "?rewriteBatchedStatements=true", "root", "root"); // running on localhost only, so root user is fine
+      conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/" + database + "?rewriteBatchedStatements=true", "root", ""); // running on localhost only, so root user is fine
     } catch (ClassNotFoundException | SQLException e) {
       e.printStackTrace();
       System.exit(-1);
@@ -80,7 +78,7 @@ public class DBHandler {
         stmt.addBatch();
       }
       // execute batch and count insertions
-      insertions += stmt.executeBatch().length;
+      attemptedInsertions += stmt.executeBatch().length;
 
       // done
       totalTimeTaken += System.currentTimeMillis() - timestamp;

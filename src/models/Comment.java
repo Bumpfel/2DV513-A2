@@ -7,14 +7,9 @@ public class Comment extends AbstractData {
   private TimeFormatter timeFormatter = new TimeFormatter();
 
   private String parent_id, link_id, subreddit_id, author, body, score, created_utc;
-  // public String getParentId() { return parent_id; }
-  // public String getLinkId() { return link_id; }
-  // public String getBody() { return body; }
-  // public String getScore() { return score; }
-  // public String getCreatedUTC() { return created_utc; }
 
   public String getInsertCols() {
-    return "id, parent_id, link_id, subreddit_id, author, body, score, created_utc"; // TODO could be static. could place in abstract class
+    return "id, parent_id, link_id, subreddit_id, author, body, score, created_utc";
   }
 
   public String[] getInsertValues() {
